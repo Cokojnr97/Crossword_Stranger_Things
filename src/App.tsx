@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 type Direction = 'across' | 'down';
 type Team = 'A' | 'B';
 type Level = 'A1' | 'A2' | 'B1' | 'B2';
+type FullscreenZoom = 'standard' | 'large' | 'xl';
+type Locale = 'en' | 'fr';
 
 interface WordSpec {
   answer: string;
@@ -95,6 +97,136 @@ const CUSTOM_TEMPLATE = [
   'DEMOGORGON|Monster from another world|B1'
 ].join('\n');
 
+const DEFAULT_FRENCH_CLUES: Record<string, string> = {
+  ELEVEN: 'Fille avec des pouvoirs qui ferme la porte',
+  HOPPER: 'Chef de police de Hawkins',
+  MIKE: 'Garcon qui mene le groupe d amis',
+  DUSTIN: 'Ami drole avec une casquette et de bonnes idees',
+  LUCAS: 'Ami pratique et courageux',
+  MAX: 'Fille en skateboard et amie forte',
+  WILL: 'Garcon qui disparait dans la saison 1',
+  UPSIDEDOWN: 'Monde parallele sombre et dangereux',
+  DEMOGORGON: 'Monstre venant d un autre monde',
+  VECNA: 'Grand mechant des saisons recentes',
+  HAWKINS: 'Petite ville ou l histoire se passe',
+  PORTAL: 'Ouverture entre deux mondes',
+  LABORATORY: 'Lieu secret pour des experiences dangereuses',
+  BICYCLE: 'Moyen de transport utilise par les enfants',
+  WAFFLES: 'Nourriture preferee d Eleven',
+  RADIO: 'Appareil utilise pour communiquer',
+  FLASHLIGHT: 'Outil utilise dans les endroits sombres',
+  MYSTERY: 'Situation difficile a expliquer',
+  FRIENDSHIP: 'Lien fort entre les personnages principaux',
+  COURAGE: 'Sentiment de bravoure face au danger'
+};
+
+const UI_TEXT: Record<Locale, Record<string, string>> = {
+  en: {
+    subtitlePrefix: 'EFL Challenge A1-B2 | Team Competition Mode',
+    defaultSet: 'Default set',
+    customSet: 'Custom set',
+    round: 'Round',
+    currentRound: 'Current round',
+    teamA: 'Team A',
+    teamB: 'Team B',
+    nextRound: 'Next round',
+    scoreboard: 'Scoreboard',
+    progress: 'Progress',
+    wordsSolved: 'words solved',
+    menu: 'Menu',
+    theater: 'Theater',
+    exit: 'Exit',
+    sound: 'Sound',
+    soundOn: 'Sound: ON',
+    soundOff: 'Sound: OFF',
+    fullscreenZoom: 'Fullscreen zoom',
+    zoomTip: 'Tip: Use Large/XL in projector mode for better visibility.',
+    standard: 'Standard',
+    large: 'Large',
+    xl: 'XL',
+    customBuilder: 'Custom crossword builder',
+    builderHelp: 'One item per line: ANSWER|Clue|Level. Levels: A1, A2, B1, B2.',
+    loadDefault: 'Load default puzzle',
+    buildCustom: 'Build custom crossword',
+    exportJson: 'Export set as JSON',
+    importJson: 'Import set from JSON',
+    across: 'Across',
+    down: 'Down',
+    points: 'pts',
+    tieGame: 'Tie game',
+    teamLeads: 'Team {team} leads',
+    solvedFlash: 'Team {team} solved {item} (+{points})',
+    solvedWords: '{count} words',
+    crosswordCompleted: 'Crossword Completed!',
+    completionLine: 'Every clue is solved. Hawkins is safe... for now.',
+    finalScore: 'Final score: Team A {a} - Team B {b}',
+    row: 'Row',
+    column: 'Column',
+    cluesList: 'Clues list',
+    crosswordBoard: 'Crossword board',
+    gameControls: 'Game controls',
+    defaultLoaded: 'Default Stranger Things puzzle loaded.',
+    customLoaded: 'Custom crossword loaded ({count} words).',
+    exported: 'Exported {count} words to JSON.',
+    imported: 'Imported custom set ({count} words).',
+    language: 'Language',
+    english: 'English',
+    french: 'French'
+  },
+  fr: {
+    subtitlePrefix: 'Defi EFL A1-B2 | Mode competition par equipes',
+    defaultSet: 'Liste par defaut',
+    customSet: 'Liste personnalisee',
+    round: 'Tour',
+    currentRound: 'Tour en cours',
+    teamA: 'Equipe A',
+    teamB: 'Equipe B',
+    nextRound: 'Tour suivant',
+    scoreboard: 'Score',
+    progress: 'Progression',
+    wordsSolved: 'mots trouves',
+    menu: 'Menu',
+    theater: 'Plein ecran',
+    exit: 'Quitter',
+    sound: 'Son',
+    soundOn: 'Son: ON',
+    soundOff: 'Son: OFF',
+    fullscreenZoom: 'Zoom plein ecran',
+    zoomTip: 'Conseil: utilisez Large/XL en mode projecteur.',
+    standard: 'Standard',
+    large: 'Large',
+    xl: 'XL',
+    customBuilder: 'Generateur personnalise',
+    builderHelp: 'Une ligne par element: ANSWER|Clue|Level. Niveaux: A1, A2, B1, B2.',
+    loadDefault: 'Charger la grille par defaut',
+    buildCustom: 'Construire une grille perso',
+    exportJson: 'Exporter en JSON',
+    importJson: 'Importer depuis JSON',
+    across: 'Horizontal',
+    down: 'Vertical',
+    points: 'pts',
+    tieGame: 'Egalite',
+    teamLeads: 'Equipe {team} en tete',
+    solvedFlash: 'Equipe {team} a trouve {item} (+{points})',
+    solvedWords: '{count} mots',
+    crosswordCompleted: 'Grille terminee !',
+    completionLine: 'Tous les indices sont resolus. Hawkins est sauve... pour le moment.',
+    finalScore: 'Score final: Equipe A {a} - Equipe B {b}',
+    row: 'Ligne',
+    column: 'Colonne',
+    cluesList: 'Liste des indices',
+    crosswordBoard: 'Grille de mots croises',
+    gameControls: 'Controles du jeu',
+    defaultLoaded: 'Grille Stranger Things par defaut chargee.',
+    customLoaded: 'Grille personnalisee chargee ({count} mots).',
+    exported: '{count} mots exportes en JSON.',
+    imported: 'Liste personnalisee importee ({count} mots).',
+    language: 'Langue',
+    english: 'Anglais',
+    french: 'Francais'
+  }
+};
+
 const KEY = (row: number, col: number): string => `${row}-${col}`;
 
 const scoreWord = (answer: string): number =>
@@ -185,7 +317,7 @@ function commitWord(
   return cells;
 }
 
-function tryBuild(size: number, words: WordSpec[]): Omit<CrosswordData, 'startCellNumbers'> | null {
+function tryBuild(size: number, words: WordSpec[]): CrosswordData | null {
   const grid: Array<Array<string | null>> = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => null)
   );
@@ -326,7 +458,11 @@ function tryBuild(size: number, words: WordSpec[]): Omit<CrosswordData, 'startCe
 }
 
 function buildCrossword(words: WordSpec[]): CrosswordData {
-  for (let size = 17; size <= 24; size += 1) {
+  const longestWordLength = Math.max(...words.map((word) => word.answer.length));
+  const minSize = Math.max(17, longestWordLength + 2);
+  const maxSize = Math.max(24, longestWordLength + 10);
+
+  for (let size = minSize; size <= maxSize; size += 1) {
     const built = tryBuild(size, words);
     if (built !== null) {
       return built;
@@ -363,10 +499,10 @@ function parseCustomWordSet(raw: string): { words: WordSpec[]; error: string | n
     const levelRaw = (parts[2] ?? 'A2').toUpperCase() as Level;
     const level: Level = ALLOWED_LEVELS.includes(levelRaw) ? levelRaw : 'A2';
 
-    if (normalizedAnswer.length < 3 || normalizedAnswer.length > 12) {
+    if (normalizedAnswer.length < 3 || normalizedAnswer.length > 15) {
       return {
         words: [],
-        error: `Word "${parts[0]}" must have 3-12 letters (A-Z only).`
+        error: `Word "${parts[0]}" must have 3-15 letters (A-Z only).`
       };
     }
 
@@ -424,6 +560,26 @@ function App(): JSX.Element {
   const [wordSetMode, setWordSetMode] = useState<'default' | 'custom'>('default');
   const [customInput, setCustomInput] = useState<string>(CUSTOM_TEMPLATE);
   const [builderError, setBuilderError] = useState<string>('');
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [fullscreenZoom, setFullscreenZoom] = useState<FullscreenZoom>('standard');
+  const [locale, setLocale] = useState<Locale>('en');
+
+  const t = UI_TEXT[locale];
+
+  const tr = (key: string, vars: Record<string, string | number> = {}): string => {
+    const template = t[key] ?? key;
+    return Object.entries(vars).reduce(
+      (acc, [name, value]) => acc.split(`{${name}}`).join(String(value)),
+      template
+    );
+  };
+
+  const fullscreenColumnSizes: Record<FullscreenZoom, string> = {
+    standard: 'minmax(18px, 30px)',
+    large: 'minmax(20px, 34px)',
+    xl: 'minmax(22px, 38px)'
+  };
 
   const crossword = useMemo(() => buildCrossword(wordSet), [wordSet]);
   const wordsById = useMemo(
@@ -479,6 +635,13 @@ function App(): JSX.Element {
     : 0;
 
   const selectedWord = selectedWordId ? wordsById[selectedWordId] : undefined;
+
+  const clueForWord = (word: PlacedWord): string => {
+    if (locale === 'fr' && wordSetMode === 'default') {
+      return DEFAULT_FRENCH_CLUES[word.answer] ?? word.clue;
+    }
+    return word.clue;
+  };
 
   function ensureAudioContext(): AudioContext | null {
     if (!soundEnabled) {
@@ -603,6 +766,17 @@ function App(): JSX.Element {
     setActiveTeam((prev) => (prev === 'A' ? 'B' : 'A'));
   }
 
+  async function toggleFullscreenMode(): Promise<void> {
+    if (document.fullscreenElement === null) {
+      await document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+      return;
+    }
+
+    await document.exitFullscreen();
+    setIsFullscreen(false);
+  }
+
   function resetGameState(): void {
     setEntries({});
     setSelectedWordId('');
@@ -619,7 +793,7 @@ function App(): JSX.Element {
     setWordSetMode('default');
     setBuilderError('');
     resetGameState();
-    setFlashMessage('Default Stranger Things puzzle loaded.');
+    setFlashMessage(tr('defaultLoaded'));
     window.setTimeout(() => setFlashMessage(''), 1800);
   }
 
@@ -643,7 +817,7 @@ function App(): JSX.Element {
     setWordSetMode('custom');
     setBuilderError('');
     resetGameState();
-    setFlashMessage(`Custom crossword loaded (${parsed.words.length} words).`);
+    setFlashMessage(tr('customLoaded', { count: parsed.words.length }));
     window.setTimeout(() => setFlashMessage(''), 2200);
   }
 
@@ -667,7 +841,7 @@ function App(): JSX.Element {
     link.remove();
     URL.revokeObjectURL(url);
 
-    setFlashMessage(`Exported ${wordsToExport.length} words to JSON.`);
+    setFlashMessage(tr('exported', { count: wordsToExport.length }));
     window.setTimeout(() => setFlashMessage(''), 1800);
   }
 
@@ -706,7 +880,7 @@ function App(): JSX.Element {
       setWordSetMode('custom');
       setBuilderError('');
       resetGameState();
-      setFlashMessage(`Imported custom set (${cleaned.words.length} words).`);
+      setFlashMessage(tr('imported', { count: cleaned.words.length }));
       window.setTimeout(() => setFlashMessage(''), 2200);
     } catch {
       setBuilderError('Could not read JSON file. Please check file format.');
@@ -718,6 +892,17 @@ function App(): JSX.Element {
   useEffect(() => {
     setSelectedWordId(crossword.words[0]?.id ?? '');
   }, [crossword]);
+
+  useEffect(() => {
+    const onFullscreenChange = (): void => {
+      setIsFullscreen(document.fullscreenElement !== null);
+    };
+
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     const newlySolved = crossword.words.filter(
@@ -747,8 +932,10 @@ function App(): JSX.Element {
       [activeTeam]: prev[activeTeam] + earned
     }));
 
-    const solvedText = newlySolved.length > 1 ? `${newlySolved.length} words` : newlySolved[0].answer;
-    setFlashMessage(`Team ${activeTeam} solved ${solvedText} (+${earned})`);
+    const solvedText = newlySolved.length > 1
+      ? tr('solvedWords', { count: newlySolved.length })
+      : newlySolved[0].answer;
+    setFlashMessage(tr('solvedFlash', { team: activeTeam, item: solvedText, points: earned }));
     window.setTimeout(() => setFlashMessage(''), 2000);
 
     playWordSolvedSound();
@@ -760,109 +947,281 @@ function App(): JSX.Element {
 
   const winnerLabel =
     scores.A === scores.B
-      ? 'Tie game'
+      ? t.tieGame
       : scores.A > scores.B
-        ? 'Team A leads'
-        : 'Team B leads';
+        ? tr('teamLeads', { team: 'A' })
+        : tr('teamLeads', { team: 'B' });
 
   return (
-    <div className="page-wrap">
+    <div className={`page-wrap ${isFullscreen ? 'fullscreen-mode' : ''} fs-zoom-${fullscreenZoom}`}>
       <div className="noise-layer" aria-hidden="true" />
-      <header className="top-banner">
-        <h1 className="neon-title">Stranger Things Crossword</h1>
-        <p className="subtitle">EFL Challenge A1-B2 | Team Competition Mode | {wordSetMode === 'default' ? 'Default set' : 'Custom set'}</p>
-      </header>
+      {!isFullscreen && (
+        <header className="top-banner">
+          <h1 className="neon-title">Stranger Things Crossword</h1>
+          <p className="subtitle">
+            {t.subtitlePrefix} | {wordSetMode === 'default' ? t.defaultSet : t.customSet}
+          </p>
+        </header>
+      )}
 
-      <section className="control-panel" aria-label="Game controls">
-        <div className="score-box">
-          <p className="label">Current round</p>
-          <div className="team-switcher" role="group" aria-label="Team selector">
+      {isFullscreen ? (
+        <section className="fullscreen-nav" aria-label={t.gameControls}>
+          <div className="fullscreen-nav-block teams">
+            <p className="label">{t.round}</p>
+            <div className="team-switcher" role="group" aria-label="Team selector">
+              <button
+                type="button"
+                onClick={() => setActiveTeam('A')}
+                className={activeTeam === 'A' ? 'team-btn active team-a' : 'team-btn team-a'}
+              >
+                {t.teamA}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTeam('B')}
+                className={activeTeam === 'B' ? 'team-btn active team-b' : 'team-btn team-b'}
+              >
+                {t.teamB}
+              </button>
+              <button type="button" className="team-btn" onClick={switchTeamForNextRound}>
+                {t.nextRound}
+              </button>
+            </div>
+          </div>
+
+          <div className="fullscreen-nav-block scoreboard">
+            <p className="label">{t.scoreboard}</p>
+            <p className="score-line">A: {scores.A} {t.points} | B: {scores.B} {t.points}</p>
+            <p className="score-hint">{winnerLabel}</p>
+          </div>
+
+          <div className="fullscreen-nav-block progress">
+            <p className="label">{t.progress}</p>
+            <p className="score-line">{solvedCount} / {crossword.words.length}</p>
+            <div
+              className="progress-track"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={completionPercent}
+            >
+              <span className="progress-fill" style={{ width: `${completionPercent}%` }} />
+            </div>
+          </div>
+
+          <div className="fullscreen-nav-block actions">
             <button
               type="button"
-              onClick={() => setActiveTeam('A')}
-              className={activeTeam === 'A' ? 'team-btn active team-a' : 'team-btn team-a'}
+              className="menu-toggle-btn"
+              onClick={() => setMenuOpen((prev) => !prev)}
+              aria-label="Toggle menu"
             >
-              Team A
+              ☰ {t.menu}
             </button>
             <button
               type="button"
-              onClick={() => setActiveTeam('B')}
-              className={activeTeam === 'B' ? 'team-btn active team-b' : 'team-btn team-b'}
+              className="fullscreen-toggle-btn"
+              onClick={() => {
+                void toggleFullscreenMode();
+              }}
+              aria-label="Exit fullscreen"
             >
-              Team B
-            </button>
-            <button type="button" className="team-btn next-round" onClick={switchTeamForNextRound}>
-              Next round
+              ⛶ {t.exit}
             </button>
           </div>
-        </div>
-
-        <div className="score-box">
-          <p className="label">Scoreboard</p>
-          <p className="score-line">Team A: {scores.A} pts</p>
-          <p className="score-line">Team B: {scores.B} pts</p>
-          <p className="score-hint">{winnerLabel}</p>
-        </div>
-
-        <div className="score-box">
-          <p className="label">Progress</p>
-          <p className="score-line">{solvedCount} / {crossword.words.length} words solved</p>
-          <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completionPercent}>
-            <span className="progress-fill" style={{ width: `${completionPercent}%` }} />
+        </section>
+      ) : (
+        <section className="control-panel" aria-label={t.gameControls}>
+          <div className="score-box">
+            <p className="label">{t.currentRound}</p>
+            <div className="team-switcher" role="group" aria-label="Team selector">
+              <button
+                type="button"
+                onClick={() => setActiveTeam('A')}
+                className={activeTeam === 'A' ? 'team-btn active team-a' : 'team-btn team-a'}
+              >
+                {t.teamA}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTeam('B')}
+                className={activeTeam === 'B' ? 'team-btn active team-b' : 'team-btn team-b'}
+              >
+                {t.teamB}
+              </button>
+              <button type="button" className="team-btn next-round" onClick={switchTeamForNextRound}>
+                {t.nextRound}
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            className={soundEnabled ? 'sound-btn enabled' : 'sound-btn'}
-            onClick={() => setSoundEnabled((prev) => !prev)}
-          >
-            {soundEnabled ? 'Sound: ON' : 'Sound: OFF'}
-          </button>
-        </div>
-      </section>
 
-      <section className="builder-panel" aria-label="Custom crossword builder">
-        <p className="label">Custom crossword builder (future-proof mode)</p>
-        <p className="builder-help">One item per line: ANSWER|Clue|Level. Levels: A1, A2, B1, B2.</p>
-        <textarea
-          className="builder-input"
-          value={customInput}
-          onChange={(event) => setCustomInput(event.target.value)}
-          aria-label="Custom crossword input"
-          spellCheck={false}
-        />
-        <div className="builder-actions">
-          <button type="button" className="team-btn" onClick={loadDefaultPuzzle}>
-            Load default puzzle
-          </button>
-          <button type="button" className="team-btn active" onClick={applyCustomPuzzle}>
-            Build custom crossword
-          </button>
-          <button type="button" className="team-btn" onClick={exportCustomSet}>
-            Export set as JSON
-          </button>
-          <button
-            type="button"
-            className="team-btn"
-            onClick={() => importInputRef.current?.click()}
-          >
-            Import set from JSON
-          </button>
-          <input
-            ref={importInputRef}
-            className="import-input"
-            type="file"
-            accept="application/json,.json"
-            onChange={onImportFileChange}
-          />
-        </div>
-        {builderError && <p className="builder-error">{builderError}</p>}
-      </section>
+          <div className="score-box">
+            <p className="label">{t.scoreboard}</p>
+            <p className="score-line">{t.teamA}: {scores.A} {t.points}</p>
+            <p className="score-line">{t.teamB}: {scores.B} {t.points}</p>
+            <p className="score-hint">{winnerLabel}</p>
+          </div>
+
+          <div className="score-box">
+            <p className="label">{t.progress}</p>
+            <p className="score-line">{solvedCount} / {crossword.words.length} {t.wordsSolved}</p>
+            <div
+              className="progress-track"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={completionPercent}
+            >
+              <span className="progress-fill" style={{ width: `${completionPercent}%` }} />
+            </div>
+            <button
+              type="button"
+              className="menu-toggle-btn"
+              onClick={() => setMenuOpen((prev) => !prev)}
+              aria-label="Toggle menu"
+            >
+              ☰ {t.menu}
+            </button>
+            <button
+              type="button"
+              className="fullscreen-toggle-btn"
+              onClick={() => {
+                void toggleFullscreenMode();
+              }}
+              aria-label="Toggle fullscreen"
+            >
+              ⛶ {t.theater}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {menuOpen && (
+        <section className="menu-panel" aria-label={t.menu}>
+          <div className="menu-header">
+            <h3>{t.menu}</h3>
+            <button
+              type="button"
+              className="menu-close-btn"
+              onClick={() => setMenuOpen(false)}
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="menu-content">
+            <div className="menu-section">
+              <p className="menu-label">{t.sound}</p>
+              <button
+                type="button"
+                className={soundEnabled ? 'sound-btn enabled' : 'sound-btn'}
+                onClick={() => setSoundEnabled((prev) => !prev)}
+              >
+                {soundEnabled ? `🔊 ${t.soundOn}` : `🔇 ${t.soundOff}`}
+              </button>
+            </div>
+
+            <div className="menu-section">
+              <p className="menu-label">{t.language}</p>
+              <div className="zoom-selector" role="group" aria-label="Language selector">
+                <button
+                  type="button"
+                  className={locale === 'en' ? 'team-btn active' : 'team-btn'}
+                  onClick={() => setLocale('en')}
+                >
+                  {t.english}
+                </button>
+                <button
+                  type="button"
+                  className={locale === 'fr' ? 'team-btn active' : 'team-btn'}
+                  onClick={() => setLocale('fr')}
+                >
+                  {t.french}
+                </button>
+              </div>
+            </div>
+
+            <div className="menu-section">
+              <p className="menu-label">{t.fullscreenZoom}</p>
+              <div className="zoom-selector" role="group" aria-label="Fullscreen zoom selector">
+                <button
+                  type="button"
+                  className={fullscreenZoom === 'standard' ? 'team-btn active' : 'team-btn'}
+                  onClick={() => setFullscreenZoom('standard')}
+                >
+                  {t.standard}
+                </button>
+                <button
+                  type="button"
+                  className={fullscreenZoom === 'large' ? 'team-btn active' : 'team-btn'}
+                  onClick={() => setFullscreenZoom('large')}
+                >
+                  {t.large}
+                </button>
+                <button
+                  type="button"
+                  className={fullscreenZoom === 'xl' ? 'team-btn active' : 'team-btn'}
+                  onClick={() => setFullscreenZoom('xl')}
+                >
+                  {t.xl}
+                </button>
+              </div>
+              <p className="builder-help">{t.zoomTip}</p>
+            </div>
+
+            <div className="menu-section">
+              <p className="menu-label">{t.customBuilder}</p>
+              <p className="builder-help">{t.builderHelp}</p>
+              <textarea
+                className="builder-input"
+                value={customInput}
+                onChange={(event) => setCustomInput(event.target.value)}
+                aria-label={t.customBuilder}
+                spellCheck={false}
+              />
+              <div className="builder-actions">
+                <button type="button" className="team-btn" onClick={loadDefaultPuzzle}>
+                  {t.loadDefault}
+                </button>
+                <button type="button" className="team-btn active" onClick={applyCustomPuzzle}>
+                  {t.buildCustom}
+                </button>
+                <button type="button" className="team-btn" onClick={exportCustomSet}>
+                  {t.exportJson}
+                </button>
+                <button
+                  type="button"
+                  className="team-btn"
+                  onClick={() => importInputRef.current?.click()}
+                >
+                  {t.importJson}
+                </button>
+                <input
+                  ref={importInputRef}
+                  className="import-input"
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={onImportFileChange}
+                />
+              </div>
+              {builderError && <p className="builder-error">{builderError}</p>}
+            </div>
+          </div>
+        </section>
+      )}
+
+
 
       {flashMessage && <div className="flash-message">{flashMessage}</div>}
 
-      <main className="game-layout">
-        <section className="board-section" aria-label="Crossword board">
-          <div className="grid" style={{ gridTemplateColumns: `repeat(${crossword.size}, minmax(20px, 34px))` }}>
+      <main className={`game-layout ${isFullscreen ? 'fullscreen-layout' : ''}`}>
+        <section className="board-section" aria-label={t.crosswordBoard}>
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${crossword.size}, ${isFullscreen ? fullscreenColumnSizes[fullscreenZoom] : 'minmax(20px, 34px)'})`
+            }}
+          >
             {crossword.grid.map((row, rowIndex) =>
               row.map((cell, colIndex) => {
                 const key = KEY(rowIndex, colIndex);
@@ -899,7 +1258,7 @@ function App(): JSX.Element {
                       inputMode="text"
                       maxLength={1}
                       value={inputValue}
-                      aria-label={`Row ${rowIndex + 1} Column ${colIndex + 1}`}
+                      aria-label={`${t.row} ${rowIndex + 1} ${t.column} ${colIndex + 1}`}
                       onClick={() => selectWordFromCell(rowIndex, colIndex)}
                       onChange={(event) => handleCellInput(rowIndex, colIndex, event.target.value)}
                       onKeyDown={(event) => handleCellKeyDown(event, rowIndex, colIndex)}
@@ -911,9 +1270,9 @@ function App(): JSX.Element {
           </div>
         </section>
 
-        <aside className="clues-section" aria-label="Clues list">
+        <aside className="clues-section" aria-label={t.cluesList}>
           <div className="clues-group">
-            <h2>Across</h2>
+            <h2>{t.across}</h2>
             <ul>
               {acrossWords.map((word) => {
                 const solvedTeam = solvedBy[word.id];
@@ -930,8 +1289,8 @@ function App(): JSX.Element {
                     role="button"
                     tabIndex={0}
                   >
-                    <strong>{word.number}</strong> {word.clue} ({word.answer.length})
-                    <span className="meta">[{word.level}] {word.score} pts {solvedTeam ? `| Team ${solvedTeam}` : ''}</span>
+                    <strong>{word.number}</strong> {clueForWord(word)} ({word.answer.length})
+                    <span className="meta">[{word.level}] {word.score} {t.points} {solvedTeam ? `| ${locale === 'fr' ? 'Equipe' : 'Team'} ${solvedTeam}` : ''}</span>
                   </li>
                 );
               })}
@@ -939,7 +1298,7 @@ function App(): JSX.Element {
           </div>
 
           <div className="clues-group">
-            <h2>Down</h2>
+            <h2>{t.down}</h2>
             <ul>
               {downWords.map((word) => {
                 const solvedTeam = solvedBy[word.id];
@@ -956,8 +1315,8 @@ function App(): JSX.Element {
                     role="button"
                     tabIndex={0}
                   >
-                    <strong>{word.number}</strong> {word.clue} ({word.answer.length})
-                    <span className="meta">[{word.level}] {word.score} pts {solvedTeam ? `| Team ${solvedTeam}` : ''}</span>
+                    <strong>{word.number}</strong> {clueForWord(word)} ({word.answer.length})
+                    <span className="meta">[{word.level}] {word.score} {t.points} {solvedTeam ? `| ${locale === 'fr' ? 'Equipe' : 'Team'} ${solvedTeam}` : ''}</span>
                   </li>
                 );
               })}
@@ -967,11 +1326,11 @@ function App(): JSX.Element {
       </main>
 
       {allSolved && (
-        <div className="completion-overlay" role="dialog" aria-modal="true" aria-label="Crossword completed">
+        <div className="completion-overlay" role="dialog" aria-modal="true" aria-label={t.crosswordCompleted}>
           <div className="completion-card">
-            <h2>Crossword Completed!</h2>
-            <p>Every clue is solved. Hawkins is safe... for now.</p>
-            <p>Final score: Team A {scores.A} - Team B {scores.B}</p>
+            <h2>{t.crosswordCompleted}</h2>
+            <p>{t.completionLine}</p>
+            <p>{tr('finalScore', { a: scores.A, b: scores.B })}</p>
           </div>
           <div className="confetti-field" aria-hidden="true">
             {Array.from({ length: 48 }, (_, i) => (

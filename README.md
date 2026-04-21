@@ -18,10 +18,15 @@ Interactive classroom crossword game inspired by Stranger Things.
   - Word-solved feedback animation + message
   - Full-puzzle completion overlay + confetti animation
 - Retro sound effects with ON/OFF toggle
-- Custom crossword builder panel:
-   - Paste lines as `ANSWER|Clue|Level`
-   - Build and load custom puzzles from the UI
-   - Reload default puzzle at any time
+- Collapsible menu with:
+  - Sound control (moved from main panel)
+   - Language switch (English / French)
+  - Custom crossword builder panel
+  - JSON import/export for word sets
+- Fullscreen theater mode:
+  - Hides header/title for projector use
+  - Larger grid and clue text for classroom viewing
+  - Team selector, scoreboard, and progress remain visible
 - Responsive UI for classroom screens and laptops
 
 ## Recommended Framework Options
@@ -65,6 +70,63 @@ These are the strongest options for this type of project:
 4. Preview production build:
    - `npm run preview`
 
+## Deploy as Web App (No IDE Needed on Target Computer)
+
+For another computer, the easiest approach is to deploy the app as a static website.
+
+### 1. Build the web version
+
+- Run:
+   - `npm install`
+   - `npm run build:web`
+- This creates the deployable folder:
+   - `dist/`
+
+### 2. Publish `dist/` with one of these options
+
+1. Netlify (fastest)
+- Go to Netlify Drop and drag the `dist/` folder.
+- You get a public URL instantly.
+
+2. Vercel
+- Create a new static project and upload/link this repo.
+- Build command: `npm run build:web`
+- Output directory: `dist`
+
+3. Any school server / shared hosting
+- Upload all files inside `dist/`.
+- Open the hosted URL in any browser.
+
+4. GitHub Pages (GitHub servers)
+- Push this project to a GitHub repository.
+- This project already includes the workflow:
+   - `.github/workflows/deploy-pages.yml`
+- In GitHub repository settings:
+   - Go to `Settings > Pages`
+   - Under `Build and deployment`, set `Source` to `GitHub Actions`
+- Push to `main` branch.
+- GitHub Actions will build and deploy automatically.
+- Your app will be available at:
+   - `https://<your-username>.github.io/<your-repo>/`
+
+### 3. Use on classroom computers
+
+- Open the hosted URL from Chrome/Edge/Firefox.
+- No Visual Studio Code or coding IDE is required.
+- No local Node.js install is required on student/teacher client machines.
+
+## Interface Modes
+
+- **Normal Mode** (default):
+  - Header with title and current word set displayed
+  - Team selector, scoreboard, progress bar in control panel
+  - Menu button opens collapsible panel
+- **Theater Mode** (fullscreen):
+  - Click "⛶ Theater" button to enter
+  - Hides header title and banner
+  - Enlarges grid cells and clue text
+  - Perfect for projector use in classrooms
+
 ## Gameplay Rules Implemented
 
 - Teams take turns by selecting active team in "Current round".
@@ -83,7 +145,7 @@ These are the strongest options for this type of project:
 - Valid levels: `A1`, `A2`, `B1`, `B2`.
 - Requirements:
    - At least 10 entries
-   - Answers between 3 and 12 letters (A-Z)
+   - Answers between 3 and 15 letters (A-Z)
    - No duplicate answers
 - JSON workflows:
    - Export current set using "Export set as JSON"
